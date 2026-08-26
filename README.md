@@ -42,6 +42,7 @@ cd AgenticArXiv-RL
 
 **创建虚拟环境**：
 ```bash
+wsl
 python3 -m venv .venv
 source .venv/bin/activate  # macOS/Linux
 # .venv\Scripts\activate   # Windows
