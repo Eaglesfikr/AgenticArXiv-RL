@@ -317,6 +317,11 @@ def make_multiturn_rollout_func(environment_factory, max_turns: int = 4):
             ids = tokenizer.apply_chat_template(
                 prompt, tokenize=True, add_generation_prompt=True,
             ) if isinstance(prompt, list) else tokenizer(prompt)["input_ids"]
+            # transformers 5.x：apply_chat_template(tokenize=True) 返回 BatchEncoding，
+            # list() 迭代出的是字段名（str）而不是 token —— 与 train_sft._token_length 同一个坑；
+            # 抽出 input_ids 数组再转 list，否则 TRL 里 torch.tensor(ids) 对 str 直接炸
+            if hasattr(ids, "keys"):
+                ids = ids["input_ids"]
             prompt_ids.append(list(ids))
 
         environments = [environment_factory() for _ in expanded_prompts]

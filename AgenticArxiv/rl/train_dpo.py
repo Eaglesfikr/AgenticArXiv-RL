@@ -90,7 +90,8 @@ def main(
         save_steps=100,
         save_total_limit=3,
         report_to=backends,
-        logging_dir=logging_dir,
+        # transformers 5.x 已把 logging_dir 从 TrainingArguments 移除；
+        # TensorBoard 日志由回调自动写到 out_dir/runs/<时间>_<主机名>。
         run_name=run_name or Path(out_dir).name,
         **_precision_flags(),     # 只有 CUDA 才开 fp16
     )

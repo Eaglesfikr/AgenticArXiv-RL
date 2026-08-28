@@ -15,10 +15,11 @@ import argparse
 import sys
 from pathlib import Path
 
+# 处理文件路径：PACKAGE_ROOT = AgenticArxiv，REPO_ROOT = AgenticArxiv 的上一级
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = PACKAGE_ROOT.parent
 
-# 添加 AgenticArxiv 到 Python 路径
+# 添加 AgenticArxiv 到 Python 路径，让导入正常工作，告诉 Python：你去 AgenticArxiv/ 下面找模块。”
 sys.path.insert(0, str(PACKAGE_ROOT))
 
 from trl import SFTConfig, SFTTrainer
@@ -111,7 +112,9 @@ def main(
     out_path = REPO_ROOT / output_dir if not Path(output_dir).is_absolute() else Path(output_dir)
     # 先校验日志后端再加载模型：参数写错时应立刻失败
     backends = resolve_report_to(report_to)
-    logging_dir = str(out_path / "logs")
+    # 该版本 transformers 不再接受 TrainingArguments 的 logging_dir 参数，
+    # TensorBoard 回调会把日志写到 out_path/runs/<时间>_<主机名>。这里只用于打印提示。
+    logging_dir = str(out_path / "runs")
 
     print(f"📦 加载模型: {model}")
     tokenizer = AutoTokenizer.from_pretrained(model)
@@ -151,7 +154,8 @@ def main(
         save_steps=100,
         save_total_limit=3,
         report_to=backends,
-        logging_dir=logging_dir,
+        # transformers 5.x 已把 logging_dir 从 TrainingArguments 移除；
+        # TensorBoard 日志由回调自动写到 out_path/runs/<时间>_<主机名>。
         run_name=run_name or out_path.name,
         **_precision_flags(),     # 只有 CUDA 才开 fp16
     )
@@ -186,6 +190,7 @@ def main(
 
 
 if __name__ == "__main__":
+    # 处理命令行参数
     parser = argparse.ArgumentParser(description="SFT 训练")
     parser.add_argument("--model", default="Qwen/Qwen2.5-1.5B-Instruct")
     parser.add_argument("--data", default=None)
